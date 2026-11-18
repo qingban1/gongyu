@@ -1,4 +1,4 @@
-name: Build and Distribute IPA
+name: Build and Distribute IPA via xcrun
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   upload:
-    name: Prepare and upload IPA
+    name: Prepare and upload IPA with xcrun
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -67,25 +67,23 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Upload IPA using official xcrun altool
+      - name: Upload IPA using xcrun altool
         shell: bash
         env:
           APPLE_USERNAME: 'JimmyDecesare63074@outlook.com'
           APPLE_PASSWORD: 'bmnj-dchz-zmhk-pywg'
         run: |
           set -euo pipefail
-          if [[ "$APPLE_USERNAME" == 'YOUR_APPLE_ID_EMAIL' || "$APPLE_PASSWORD" == 'REPLACE_WITH_NEW_APP_SPECIFIC_PASSWORD' ]]; then
-            echo '错误：请在 YAML env 中填写 Apple ID 邮箱和新生成的 App 专用密码。'
-            exit 1
-          fi
+          
+          # 检查是否使用了兼容 altool 的 Xcode 路径（若默认环境找不到 altool，可切到默认可用路径）
+          echo "检查当前 Xcode 版本："
           xcodebuild -version
-          xcrun --find altool
+          
+          # 如果默认的 macos-latest 找不到 altool，可以通过切换开发者目录来兼容（视 runner 上的 xcode 安装情况而定）
+          # 默认调用系统的 xcrun altool
           xcrun altool --upload-app \
             --file "$IPA_PATH" \
             --type ios \
             --username "$APPLE_USERNAME" \
-            --password '@env:APPLE_PASSWORD' \
+            --password "$APPLE_PASSWORD" \
             --verbose
-
-
-
